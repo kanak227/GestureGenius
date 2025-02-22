@@ -1,0 +1,132 @@
+.video-call-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+  }
+  
+  .register-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    margin: 2rem auto;
+  }
+  
+  .input-field {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+  }
+  
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary {
+    background-color: #0066ff;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: #0052cc;
+  }
+  
+  .video-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+    margin: 20px 0;
+  }
+  
+  .video {
+    width: 100%;
+    max-width: 640px;
+    height: 360px;
+    border-radius: 12px;
+    background-color: #2c2c2c;
+    object-fit: cover;
+  }
+  
+  .controls {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .control-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .control-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .control-button.end-call {
+    background-color: #ff4d4d;
+    color: white;
+  }
+  
+  .control-button.end-call:hover {
+    background-color: #ff3333;
+  }
+  
+  .control-button.toggle {
+    background-color: #424242;
+    color: white;
+  }
+  
+  .control-button.toggle:hover {
+    background-color: #323232;
+  }
+  
+  .control-button.toggle.active {
+    background-color: #666;
+  }
+  
+  .user-info {
+    background: white;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  .call-status {
+    margin: 16px 0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    text-align: center;
+  }

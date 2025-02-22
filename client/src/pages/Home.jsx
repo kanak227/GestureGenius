@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { FaPhone, FaPhoneSlash, FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash } from 'react-icons/fa';
 
-import "../../CSS/videocall.css";
+import "./css/Home.css";
 
-const VideoCall = () => {
-  const [userId, setUserId] = useState('');
+const Home = () => {
+  const [email, setEmail] = useState('');
+  const [isRegistered, setIsRegistered] = useState(false);
   const [targetUserId, setTargetUserId] = useState('');
   const [localStream, setLocalStream] = useState(null);
   const [isInCall, setIsInCall] = useState(false);
@@ -34,21 +35,28 @@ const VideoCall = () => {
   useEffect(() => {
     socketRef.current = io('http://localhost:3001', {
       transports: ['websocket'],
-      forceNew: true
+      forceNew: false,
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Connected with ID:', socketRef.current.id);
-      const userEmail = localStorage.email;
-      socketRef.current.emit('register-email', userEmail);
+      console.log('Connected to server with socket ID:', socketRef.current.id);
+    });
+
+    socketRef.current.on('registration-success', ({ message }) => {
+      console.log('Registration successful');
+      setIsRegistered(true);
+      localStorage.setItem('email', email);
+    });
+
+    socketRef.current.on('registration-failed', () => {
+      alert('Registration failed. Try another email.');
     });
 
     socketRef.current.on('incoming-call', async ({ from, offer }) => {
-      console.log('Incoming call from email:', from);
+      console.log('Incoming call from:', from);
       setIncomingCall({ from, offer });
       setCurrentCallId(from);
     });
-    
 
     socketRef.current.on('call-accepted', async (answer) => {
       console.log('Call accepted, setting remote description');
@@ -80,6 +88,14 @@ const VideoCall = () => {
     };
   }, []);
 
+  const registerEmail = () => {
+    if (!email.trim()) {
+      alert('Please enter a valid email');
+      return;
+    }
+    socketRef.current.emit('register-email', email);
+  };
+
   const createPeerConnection = () => {
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
@@ -105,10 +121,6 @@ const VideoCall = () => {
       }
     };
 
-    pc.oniceconnectionstatechange = () => {
-      console.log('ICE Connection State:', pc.iceConnectionState);
-    };
-
     return pc;
   };
 
@@ -131,14 +143,14 @@ const VideoCall = () => {
 
   const initiateCall = async () => {
     if (!targetUserId.trim()) {
-      alert('Please enter a user ID to call');
+      alert('Please enter a user email to call');
       return;
     }
 
     try {
       setCurrentCallId(targetUserId);
       setIsInCall(true);
-      
+
       const stream = await startLocalStream();
       const pc = createPeerConnection();
 
@@ -146,10 +158,7 @@ const VideoCall = () => {
         pc.addTrack(track, stream);
       });
 
-      const offer = await pc.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: true
-      });
+      const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
       console.log('Sending call offer to:', targetUserId);
@@ -214,96 +223,108 @@ const VideoCall = () => {
     socketRef.current.emit('end-call', { to: currentCallId });
     cleanupCall();
   };
-
   const toggleAudio = () => {
     if (localStream) {
-      localStream.getAudioTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
+      const audioTrack = localStream.getAudioTracks()[0];
+      audioTrack.enabled = !audioTrack.enabled;
       setIsAudioMuted(!isAudioMuted);
     }
   };
 
   const toggleVideo = () => {
     if (localStream) {
-      localStream.getVideoTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
+      const videoTrack = localStream.getVideoTracks()[0];
+      videoTrack.enabled = !videoTrack.enabled;
       setIsVideoOff(!isVideoOff);
     }
   };
 
   return (
     <div className="video-call-container">
-      <h2 className="user-id">Your ID: {userId}</h2>
-      <div className="call-controls">
-      <input
-  type="text"
-  value={targetUserId}
-  onChange={(e) => setTargetUserId(e.target.value)}
-  placeholder="Enter email ID to call"
-  className="input-field"
-/>
-
-        <button
-          onClick={initiateCall}
-          disabled={isInCall}
-          className="btn btn-primary"
-        >
-          <FaPhone /> Call
-        </button>
-      </div>
-
-      {incomingCall && (
-        <div className="incoming-call">
-          <p>Incoming call from: {incomingCall.from}</p>
-          <div className="call-actions">
-            <button onClick={acceptCall} className="btn btn-primary">
-              <FaPhone /> Accept
-            </button>
-            <button onClick={() => setIncomingCall(null)} className="btn btn-danger">
-              <FaPhoneSlash /> Reject
-            </button>
-          </div>
+      {!isRegistered ? (
+        <div className="register-container">
+          <input
+            type="text"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email to register"
+            className="input-field"
+          />
+          <button onClick={registerEmail} className="btn btn-primary">
+            Register
+          </button>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="user-info">
+            <h2>Your ID: {email}</h2>
+            <input
+              type="text"
+              value={targetUserId}
+              onChange={(e) => setTargetUserId(e.target.value)}
+              placeholder="Enter email ID to call"
+              className="input-field"
+            />
+            {!isInCall && (
+              <button onClick={initiateCall} className="btn btn-primary">
+                <FaPhone /> Call
+              </button>
+            )}
+          </div>
 
-      {isInCall && (
-        <div className="video-grid">
+          {incomingCall && (
+            <div className="call-status">
+              <p>Incoming call from {incomingCall.from}</p>
+              <button onClick={acceptCall} className="btn btn-primary">
+                <FaPhone /> Accept Call
+              </button>
+            </div>
+          )}
+
           <div className="video-container">
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              className="video"
+            <video 
+              ref={localVideoRef} 
+              autoPlay 
+              playsInline 
+              muted 
+              className="video" 
             />
-            <p className="video-label">Local</p>
-          </div>
-          <div className="video-container">
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="video"
+            <video 
+              ref={remoteVideoRef} 
+              autoPlay 
+              playsInline 
+              className="video" 
             />
-            <p className="video-label">Remote</p>
           </div>
-          <div className="call-actions">
-            <button onClick={toggleAudio} className={`action-btn ${isAudioMuted ? 'active' : ''}`}>
-              {isAudioMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
-            </button>
-            <button onClick={toggleVideo} className={`action-btn ${isVideoOff ? 'active' : ''}`}>
-              {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
-            </button>
-            <button onClick={endCall} className="action-btn end-call-btn">
-              <FaPhoneSlash />
-            </button>
-          </div>
-        </div>
+
+          {isInCall && (
+            <div className="controls">
+              <button 
+                className={`control-button toggle ${isAudioMuted ? 'active' : ''}`}
+                onClick={toggleAudio}
+              >
+                {isAudioMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
+              </button>
+              
+              <button 
+                className={`control-button toggle ${isVideoOff ? 'active' : ''}`}
+                onClick={toggleVideo}
+              >
+                {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
+              </button>
+              
+              <button 
+                className="control-button end-call"
+                onClick={endCall}
+              >
+                <FaPhoneSlash />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 };
 
-export default VideoCall;
+export default Home;

@@ -1,42 +1,3 @@
-// const express = require('express');
-// const http = require('http');
-// const { Server } = require('socket.io');
-// const cors = require('cors');
-
-// const app = express();
-// app.use(cors());
-
-// const server = http.createServer(app);
-// const io = new Server(server, {
-//   cors: {
-//     origin: "*",
-//     methods: ["GET", "POST"]
-//   }
-// });
-
-// io.on('connection', (socket) => {
-//     console.log('User connected:', socket.id);
-
-//     socket.on('offer', (offer) => {
-//         console.log('Offer received from:', socket.id);
-//         socket.broadcast.emit('offer', offer);
-//     });
-
-//     socket.on('answer', (answer) => {
-//         console.log('Answer received from:', socket.id);
-//         socket.broadcast.emit('answer', answer);
-//     });
-
-//     socket.on('candidate', (candidate) => {
-//         console.log('Candidate received from:', socket.id);
-//         socket.broadcast.emit('candidate', candidate);
-//     });
-// });
-
-// const PORT = process.env.PORT || 3001;
-// server.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-// });
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -56,9 +17,16 @@ const io = new Server(server, {
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+  
   socket.on('register-email', (email) => {
-    emailToSocketMap.set(email, socket.id);
-    console.log(`Registered email: ${email} with socket ID: ${socket.id}`);
+    if (emailToSocketMap.has(email)) {
+      socket.emit('registration-failed', { message: 'Email is already registered on another device.' });
+      console.log(`Registration failed for ${email}: Email already registered.`);
+    } else {
+      emailToSocketMap.set(email, socket.id);
+      socket.emit('registration-success', { message: 'Email registered successfully.' });
+      console.log(`Registered email: ${email} with socket ID: ${socket.id}`);
+    }
   });
 
   socket.on('initiate-call', ({ toEmail, offer }) => {
