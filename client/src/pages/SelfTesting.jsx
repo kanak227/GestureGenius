@@ -180,7 +180,7 @@ const ASLDetector = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('http://localhost:5000/prediction');
+        const response = await fetch('http://localhost:5001/prediction');
         const data = await response.json();
         setPrediction(data.class);
       } catch (error) {
@@ -265,7 +265,7 @@ const ASLDetector = () => {
 
           {/* Video Feed */}
           <div className="video-wrapper">
-            <img src="http://localhost:5000/video_feed" alt="Live ASL Stream" className="video-feed" />
+            <img src="http://localhost:5001/video_feed" alt="Live ASL Stream" className="video-feed" />
           </div>
 
           {/* Output Display */}
