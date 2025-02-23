@@ -247,6 +247,8 @@ const VideoCall = () => {
             <li><Link to="/">Home</Link></li>
             <li><Link to="/self-testing">Self Testing</Link></li>
             <li><Link to="/video-calling">Video Calling</Link></li>
+            <li><Link to="/learn">Learn ASL</Link></li>
+            <li><Link to="/Explore">Explore Model</Link></li>
           </ul>
         </div>
       </nav>

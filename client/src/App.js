@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import VideoCall from "./pages/VideoCall.jsx";
 import HomePage from "./pages/Home.jsx";
 import Testing from "./pages/SelfTesting.jsx";
+import Learn from "./pages/Learn.jsx";
+import ModelPage from "./pages/Explore.jsx";
 function App() {
   return (
     <Router>
@@ -10,6 +12,9 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/video-calling" element={<VideoCall />} />
         <Route path="/self-testing" element={<Testing />} />
+        <Route path="/learn" element={<Learn />} />
+        <Route path="/Explore" element={<ModelPage />} />
+
       </Routes>
     </Router>
   );
