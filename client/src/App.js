@@ -5,6 +5,7 @@ import HomePage from "./pages/Home.jsx";
 import Learn from "./pages/Learn.jsx";
 import ModelPage from "./pages/Explore.jsx";
 import ASLDetector from "./pages/SelfTesting.jsx";
+import VideoChat from "./pages/temp.jsx";
 function App() {
   return (
     <Router>
@@ -14,6 +15,7 @@ function App() {
         <Route path="/self-testing" element={<ASLDetector />} />
         <Route path="/learn" element={<Learn />} />
         <Route path="/Explore" element={<ModelPage />} />
+        <Route path="/temp" element={<VideoChat />} />
 
       </Routes>
     </Router>
