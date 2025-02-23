@@ -37,7 +37,18 @@ io.on('connection', (socket) => {
       socket.emit('user-not-found', { email: toEmail });
     }
   });
-
+  socket.on('asl-prediction', ({ toSocketId, prediction }) => {
+    console.log('Received asl-prediction:', { toSocketId, prediction });
+  
+    if (!toSocketId) {
+      console.error("Error: toSocketId is undefined!");
+      return;
+    }
+  
+    io.to(toSocketId).emit('asl-prediction', { prediction });
+    console.log(`Forwarded ASL prediction to ${toSocketId}`);
+  });
+  
   socket.on('accept-call', ({ to, answer }) => {
     console.log(`Call accepted by ${socket.id}, sending to ${to}`);
     socket.to(to).emit('call-accepted', answer);
