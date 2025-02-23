@@ -15,7 +15,7 @@ const VideoChat = () => {
 
   // Initialize WebSocket connection
   useEffect(() => {
-    wsRef.current = new WebSocket(`ws://172.20.10.2:8000/ws/${localPeerId}`);
+    wsRef.current = new WebSocket(`ws://localhost:8000/ws/${localPeerId}`);
     
     wsRef.current.onmessage = async (event) => {
       const message = JSON.parse(event.data);
