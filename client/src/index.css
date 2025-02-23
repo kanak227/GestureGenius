@@ -341,3 +341,129 @@ code {
   .nav-list a:hover {
     color: #666;
   }
+/* General container */
+.asl-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* Navbar styles */
+.navbar {
+  background-color: #2c3e50;
+  padding: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-links li {
+  margin: 0 20px;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #3498db;
+}
+
+/* Main content styles */
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 20px;
+  text-align: center;
+}
+
+.title {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Video feed styles */
+.video-wrapper {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.video-feed {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Output box styles */
+.output-box {
+  background-color: white;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.output-box h3 {
+  color: #2c3e50;
+  margin: 0 0 1rem 0;
+  font-size: 1.5rem;
+}
+
+.output-text {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #3498db;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+/* Responsive design */
+@media (max-width: 500px) {
+  .nav-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .nav-links li {
+    margin: 10px 0;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .output-box {
+    max-width: 90%;
+  }
+}
+
+/* Animation for prediction changes */
+.output-text {
+  transition: all 0.3s ease;
+}
+
+.output-text:empty::before {
+  content: "No hand detected";
+  color: #6c757d;
+  font-style: italic;
+}

@@ -22,7 +22,7 @@
 //     canvas.width = video.videoWidth;
 //     canvas.height = video.videoHeight;
 //     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
 //     try {
 //       const response = await fetch('http://localhost:5000/predict', {
 //         method: 'POST',
@@ -36,7 +36,7 @@
 
 //       if (!data.error) {
 //         setPrediction(data);
-        
+
 //         // Update output string
 //         if (data.class) {
 //           setOutputString(prev => {
@@ -44,7 +44,7 @@
 //             return newString.length > 30 ? newString.slice(-30) : newString;
 //           });
 //         }
-        
+
 //         // Draw bounding box and update hand detection state
 //         if (data.bbox) {
 //           setHandDetected(true);  // Hand detected, enable blinking effect
@@ -84,7 +84,7 @@
 //         videoRef.current.srcObject = stream;
 //         await videoRef.current.play();
 //         setIsStarted(true);
-        
+
 //         frameInterval.current = setInterval(captureFrame, 500);
 //       }
 //     } catch (err) {
@@ -118,7 +118,7 @@
 //   return (
 //     <div className="asl-detector">
 //       <h2 className="title">ASL Sign Language Detector</h2>
-      
+
 //       <div className={video-container ${handDetected ? 'processing' : ''}}>
 //         <video ref={videoRef} playsInline />
 //         <canvas ref={canvasRef} />
@@ -172,7 +172,7 @@
 
 
 import React, { useEffect, useState } from 'react';
-import './css/SelfTesting.css';
+import { Link } from 'react-router-dom';
 
 const ASLDetector = () => {
   const [prediction, setPrediction] = useState('');
@@ -192,19 +192,92 @@ const ASLDetector = () => {
   }, []);
 
   return (
-    <div className="asl-detector">
-      <h2 className="title">ASL Sign Language Detector</h2>
+    <>
+      {/* Navbar */}
+      <nav className="navbar">
+        <div className="nav-container">
+          <ul className="nav-links">
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/self-testing">Self Testing</Link></li>
+            <li><Link to="/video-calling">Video Calling</Link></li>
+            <li><Link to="/learn">Learn ASL</Link></li>
+            <li><Link to="/Explore">Explore Model</Link></li>
+          </ul>
+        </div>
+      </nav>
+      <div className="asl-container">
+        <style>
+          {`
+     .asl-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f4f4f4;
+}
 
-      <div className="video-container">
-        <img src="http://localhost:5000/video_feed" alt="Live ASL Stream" />
-      </div>
+.video-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 90%; /* Adjust width to match the video */
+  max-width: 800px; /* Prevent it from getting too large */
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-      <div className="output-container">
-        <h3>Detected Sign:</h3>
-        <div className="output-text">{prediction || "No hand detected"}</div>
+.video-feed {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid #ddd;
+}
+
+    .title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+          .output-box {
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+          }
+          .output-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #555;
+            }
+            `}
+        </style>
+
+
+        {/* Main Content */}
+        <div className="content">
+          <h7 className="title">ASL Sign Language Detector</h7>
+
+          {/* Video Feed */}
+          <div className="video-wrapper">
+            <img src="http://localhost:5000/video_feed" alt="Live ASL Stream" className="video-feed" />
+          </div>
+
+          {/* Output Display */}
+          <div className="output-box">
+            <h3>Detected Sign: {prediction || "No hand detected"}</h3>
+            
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
 export default ASLDetector;
+
