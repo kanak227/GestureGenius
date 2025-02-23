@@ -1,330 +1,256 @@
-import React, { useEffect, useRef, useState } from 'react';
-import io from 'socket.io-client';
-import { FaPhone, FaPhoneSlash, FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash } from 'react-icons/fa';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Camera, Video, PlayCircle } from 'lucide-react';
 
-import "./css/Home.css";
-
-const Home = () => {
-  const [email, setEmail] = useState('');
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [targetUserId, setTargetUserId] = useState('');
-  const [localStream, setLocalStream] = useState(null);
-  const [isInCall, setIsInCall] = useState(false);
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [currentCallId, setCurrentCallId] = useState(null);
-  const [isAudioMuted, setIsAudioMuted] = useState(false);
-  const [isVideoOff, setIsVideoOff] = useState(false);
-
-  const socketRef = useRef(null);
-  const peerConnectionRef = useRef(null);
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-
-  const iceServers = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
-    ]
-  };
-
-  useEffect(() => {
-    socketRef.current = io('http://localhost:3001', {
-      transports: ['websocket'],
-      forceNew: false,
-    });
-
-    socketRef.current.on('connect', () => {
-      console.log('Connected to server with socket ID:', socketRef.current.id);
-    });
-
-    socketRef.current.on('registration-success', ({ message }) => {
-      console.log('Registration successful');
-      setIsRegistered(true);
-      localStorage.setItem('email', email);
-    });
-
-    socketRef.current.on('registration-failed', () => {
-      alert('Registration failed. Try another email.');
-    });
-
-    socketRef.current.on('incoming-call', async ({ from, offer }) => {
-      console.log('Incoming call from:', from);
-      setIncomingCall({ from, offer });
-      setCurrentCallId(from);
-    });
-
-    socketRef.current.on('call-accepted', async (answer) => {
-      console.log('Call accepted, setting remote description');
-      try {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-      } catch (error) {
-        console.error('Error setting remote description:', error);
-      }
-    });
-
-    socketRef.current.on('candidate', async (candidate) => {
-      console.log('Received ICE candidate');
-      try {
-        if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
-          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-        }
-      } catch (error) {
-        console.error('Error adding ICE candidate:', error);
-      }
-    });
-
-    socketRef.current.on('call-ended', () => {
-      cleanupCall();
-    });
-
-    return () => {
-      cleanupCall();
-      socketRef.current?.disconnect();
-    };
-  }, []);
-
-  const registerEmail = () => {
-    if (!email.trim()) {
-      alert('Please enter a valid email');
-      return;
-    }
-    socketRef.current.emit('register-email', email);
-  };
-
-  const createPeerConnection = () => {
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-    }
-
-    const pc = new RTCPeerConnection(iceServers);
-    peerConnectionRef.current = pc;
-
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log('Sending ICE candidate to:', currentCallId);
-        socketRef.current.emit('candidate', {
-          to: currentCallId,
-          candidate: event.candidate
-        });
-      }
-    };
-
-    pc.ontrack = (event) => {
-      console.log('Received remote track');
-      if (remoteVideoRef.current && event.streams[0]) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    return pc;
-  };
-
-  const startLocalStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      setLocalStream(stream);
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-      return stream;
-    } catch (error) {
-      console.error('Error accessing media devices:', error);
-      alert('Cannot access camera or microphone');
-    }
-  };
-
-  const initiateCall = async () => {
-    if (!targetUserId.trim()) {
-      alert('Please enter a user email to call');
-      return;
-    }
-
-    try {
-      setCurrentCallId(targetUserId);
-      setIsInCall(true);
-
-      const stream = await startLocalStream();
-      const pc = createPeerConnection();
-
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-      });
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      console.log('Sending call offer to:', targetUserId);
-      socketRef.current.emit('initiate-call', {
-        toEmail: targetUserId, 
-        offer: pc.localDescription
-      });
-    } catch (error) {
-      console.error('Error initiating call:', error);
-      cleanupCall();
-    }
-  };
-
-  const acceptCall = async () => {
-    if (!incomingCall) return;
-
-    try {
-      setIsInCall(true);
-      const stream = await startLocalStream();
-      const pc = createPeerConnection();
-
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-      });
-
-      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
-
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-
-      console.log('Sending answer to:', incomingCall.from);
-      socketRef.current.emit('accept-call', {
-        to: incomingCall.from,
-        answer: pc.localDescription
-      });
-
-      setIncomingCall(null);
-    } catch (error) {
-      console.error('Error accepting call:', error);
-      cleanupCall();
-    }
-  };
-
-  const cleanupCall = () => {
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-    }
-    setLocalStream(null);
-    setIsInCall(false);
-    setIncomingCall(null);
-    setCurrentCallId(null);
-    setIsAudioMuted(false);
-    setIsVideoOff(false);
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-  };
-
-  const endCall = () => {
-    socketRef.current.emit('end-call', { to: currentCallId });
-    cleanupCall();
-  };
-  const toggleAudio = () => {
-    if (localStream) {
-      const audioTrack = localStream.getAudioTracks()[0];
-      audioTrack.enabled = !audioTrack.enabled;
-      setIsAudioMuted(!isAudioMuted);
-    }
-  };
-
-  const toggleVideo = () => {
-    if (localStream) {
-      const videoTrack = localStream.getVideoTracks()[0];
-      videoTrack.enabled = !videoTrack.enabled;
-      setIsVideoOff(!isVideoOff);
-    }
-  };
-
+const HomePage = () => {
   return (
-    <div className="video-call-container">
-      {!isRegistered ? (
-        <div className="register-container">
-          <input
-            type="text"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email to register"
-            className="input-field"
-          />
-          <button onClick={registerEmail} className="btn btn-primary">
-            Register
-          </button>
+    <div className="homepage">
+      {/* Navbar */}
+      <nav className="navbar">
+        <div className="container">
+          <ul>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/self-testing">Self Testing</Link></li>
+            <li><Link to="/video-calling">Video Calling</Link></li>
+          </ul>
         </div>
-      ) : (
-        <>
-          <div className="user-info">
-            <h2>Your ID: {email}</h2>
-            <input
-              type="text"
-              value={targetUserId}
-              onChange={(e) => setTargetUserId(e.target.value)}
-              placeholder="Enter email ID to call"
-              className="input-field"
-            />
-            {!isInCall && (
-              <button onClick={initiateCall} className="btn btn-primary">
-                <FaPhone /> Call
-              </button>
-            )}
-          </div>
+      </nav>
 
-          {incomingCall && (
-            <div className="call-status">
-              <p>Incoming call from {incomingCall.from}</p>
-              <button onClick={acceptCall} className="btn btn-primary">
-                <FaPhone /> Accept Call
-              </button>
+      {/* Hero Section */}
+      <div className="hero">
+        <div className="container">
+          <h1>ASL Detector</h1>
+          <p>Breaking communication barriers with real-time sign language detection</p>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="features">
+        <div className="container">
+          <h2>Our Features</h2>
+
+          <div className="feature-grid">
+            {/* Self Testing Feature */}
+            <div className="feature-card">
+              <Camera className="icon" />
+              <h3>Self Testing</h3>
+              <p>Practice and test your ASL signs with instant feedback</p>
+              <ul>
+                <li>Real-time sign detection</li>
+                <li>Instant accuracy feedback</li>
+                <li>Practice mode available</li>
+              </ul>
             </div>
-          )}
 
-          <div className="video-container">
-            <video 
-              ref={localVideoRef} 
-              autoPlay 
-              playsInline 
-              muted 
-              className="video" 
-            />
-            <video 
-              ref={remoteVideoRef} 
-              autoPlay 
-              playsInline 
-              className="video" 
-            />
-          </div>
-
-          {isInCall && (
-            <div className="controls">
-              <button 
-                className={`control-button toggle ${isAudioMuted ? 'active' : ''}`}
-                onClick={toggleAudio}
-              >
-                {isAudioMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
-              </button>
-              
-              <button 
-                className={`control-button toggle ${isVideoOff ? 'active' : ''}`}
-                onClick={toggleVideo}
-              >
-                {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
-              </button>
-              
-              <button 
-                className="control-button end-call"
-                onClick={endCall}
-              >
-                <FaPhoneSlash />
-              </button>
+            {/* Video Calling Feature */}
+            <div className="feature-card">
+              <Video className="icon" />
+              <h3>Video Calling</h3>
+              <p>Connect with others using ASL-enabled video calls</p>
+              <ul>
+                <li>Live ASL translation</li>
+                <li>HD video quality</li>
+                <li>Easy-to-use interface</li>
+              </ul>
             </div>
-          )}
-        </>
-      )}
+
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action */}
+      <div className="cta">
+        <div className="container">
+          <h2>Ready to Get Started?</h2>
+          <p>Experience the power of our ASL detection technology</p>
+          <Link to="/self-testing">
+          <button>Try Now</button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Styles */}
+      <style>{`
+        .homepage {
+          min-height: 100vh;
+          font-family: Arial, sans-serif;
+        }
+
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+          background-color: #2563eb;
+          padding: 15px 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          color: white;
+        }
+
+        .logo {
+          font-size: 24px;
+          font-weight: bold;
+        }
+
+        .navbar ul {
+          list-style: none;
+          display: flex;
+          gap: 20px;
+          padding: 0;
+          margin: 0;
+        }
+
+        .navbar ul li {
+          display: inline;
+        }
+
+        .navbar ul li a {
+          color: white;
+          text-decoration: none;
+          font-size: 18px;
+          transition: opacity 0.3s;
+        }
+
+        .navbar ul li a:hover {
+          opacity: 0.8;
+        }
+
+        .hero {
+          background-color: white;
+          color: black;
+          padding: 20px 0;
+          text-align: center;
+        }
+
+        .hero h1 {
+          font-size: 48px;
+          margin-bottom: 20px;
+        }
+
+        .hero p {
+          font-size: 20px;
+          margin: 0;
+        }
+
+        .features {
+          padding: 30px 0;
+        }
+
+        .features h2 {
+          text-align: center;
+          font-size: 36px;
+        }
+
+        .feature-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 30px;
+        }
+
+        .feature-card {
+          background: white;
+          border-radius: 8px;
+          padding: 30px;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          transition: box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .icon {
+          width: 48px;
+          height: 48px;
+          color: #2563eb;
+          margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+          font-size: 24px;
+          margin-bottom: 15px;
+        }
+
+        .feature-card p {
+          color: #666;
+          margin-bottom: 20px;
+        }
+
+        .feature-card ul {
+          list-style: none;
+          padding: 0;
+        }
+
+        .feature-card ul li {
+          color: #666;
+          margin-bottom: 10px;
+          padding-left: 20px;
+          position: relative;
+        }
+
+        .feature-card ul li:before {
+          content: "•";
+          position: absolute;
+          left: 0;
+          color: #2563eb;
+        }
+
+        .cta {
+          background-color: #f3f4f6;
+          padding: 80px 0;
+          text-align: center;
+        }
+
+        .cta h2 {
+          font-size: 32px;
+          margin-bottom: 20px;
+        }
+
+        .cta p {
+          color: #666;
+          margin-bottom: 30px;
+        }
+
+        .cta button {
+          background-color: #2563eb;
+          color: white;
+          border: none;
+          padding: 15px 40px;
+          font-size: 18px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+
+        .cta button:hover {
+          background-color: #1d4ed8;
+        }
+
+        @media (max-width: 768px) {
+          .hero h1 {
+            font-size: 36px;
+          }
+
+          .hero p {
+            font-size: 18px;
+          }
+
+          .features {
+            padding: 60px 0;
+          }
+
+          .feature-card {
+            padding: 20px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default Home;
+export default HomePage;
