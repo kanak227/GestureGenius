@@ -5,6 +5,10 @@
   text-align: center;
 }
 
+.team{
+  height: 250px;
+  
+}
 .problem-highlight h2,
 .solution h2 {
   font-size: 32px;

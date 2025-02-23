@@ -419,129 +419,157 @@ const cleanupCall = () => {
           setLocalMessage('');
         }
       };
-    return (
-      <>
-        <nav className="navbar">
-          <div className="container">
-            <ul>
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/self-testing">Self Testing</Link></li>
-              <li><Link to="/video-calling">Video Calling</Link></li>
-              <li><Link to="/learn">Learn ASL</Link></li>
-              <li><Link to="/Explore">Explore Model</Link></li>
-            </ul>
-          </div>
-        </nav>
-        <div className="video-call-container">
-          {!isRegistered ? (
-            <div className="register-container">
-              <input
-                type="text"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email to register"
-                className="input-field"
-              />
-              <button onClick={registerEmail} className="btn btn-primary">
-                Register
-              </button>
+      return (
+        <div className="app-container">
+          <nav className="navbar">
+            <div className="nav-container">
+              <ul className="nav-list">
+                <li><Link to="/">Home</Link></li>
+                <li><Link to="/self-testing">Self Testing</Link></li>
+                <li><Link to="/video-calling">Video Calling</Link></li>
+                <li><Link to="/learn">Learn ASL</Link></li>
+                <li><Link to="/Explore">Explore Model</Link></li>
+              </ul>
             </div>
-          ) : (
-            <>
-              <div className="user-info">
-                <h2>Your ID: {email}</h2>
+          </nav>
+      
+          <div className="main-container">
+            {!isRegistered ? (
+              <div className="register-box">
+                <h2>Register to Start</h2>
                 <input
-                  type="text"
-                  value={targetUserId}
-                  onChange={(e) => setTargetUserId(e.target.value)}
-                  placeholder="Enter email ID to call"
-                  className="input-field"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email to register"
+                  className="register-input"
                 />
-                {!isInCall && (
-                  <button onClick={initiateCall} className="btn btn-primary">
-                    <FaPhone /> Call
-                  </button>
+                <button onClick={registerEmail} className="register-btn">
+                  Register
+                </button>
+              </div>
+            ) : (
+              <div className="video-call-wrapper">
+                {/* User Info Section */}
+                <div className="user-panel">
+                  <div className="user-id">
+                    <h2>Your ID: {email}</h2>
+                  </div>
+                  <div className="call-actions">
+                    <input
+                      type="email"
+                      value={targetUserId}
+                      onChange={(e) => setTargetUserId(e.target.value)}
+                      placeholder="Enter email ID to call"
+                      className="call-input"
+                    />
+                    {!isInCall && (
+                      <button onClick={initiateCall} className="call-btn">
+                        <FaPhone /> Call
+                      </button>
+                    )}
+                  </div>
+                </div>
+      
+                {/* Incoming Call Alert */}
+                {incomingCall && (
+                  <div className="incoming-call-alert">
+                    <div className="alert-content">
+                      <p>Incoming call from {incomingCall.from}</p>
+                      <button onClick={acceptCall} className="accept-btn">
+                        <FaPhone /> Accept
+                      </button>
+                    </div>
+                  </div>
+                )}
+      
+               
+                <div className="maincont">
+                <div className="streams-container">
+                  <div className="video-stream local">
+                    <video
+                      ref={localVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="video-element"
+                    />
+                    {localPrediction.class && (
+                      <div className="prediction-badge local">
+                        <p>You: {localPrediction.class} ({(localPrediction.confidence * 100).toFixed(2)}%)</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="video-stream remote">
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="video-element"
+                    />
+                    {remotePrediction.class && (
+                      <div className="prediction-badge remote">
+                        <p>Partner: {remotePrediction.class} ({(remotePrediction.confidence * 100).toFixed(2)}%)</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="chat-transcription-container">
+                  <div className="transcription-box">
+                    <h3>Live ASL Transcription</h3>
+                    <div className="transcription-content">
+                      <div className="transcription-messages">
+                        {localMessage && (
+                          <div className="message-item outgoing">
+                            <span className="message-label">You:</span>
+                            <p>{localMessage}</p>
+                          </div>
+                        )}
+                        {remoteMessage && (
+                          <div className="message-item incoming">
+                            <span className="message-label">Partner:</span>
+                            <p>{remoteMessage}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="message-actions">
+                      <button onClick={sendMessage} className="send-btn">
+                        Send Message
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                </div>
+      
+                {/* Call Controls */}
+                {isInCall && (
+                  <div className="call-controls">
+                    <button
+                      className={`control-btn ${isAudioMuted ? 'muted' : ''}`}
+                      onClick={toggleAudio}
+                    >
+                      {isAudioMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                    </button>
+                    <button
+                      className={`control-btn ${isVideoOff ? 'disabled' : ''}`}
+                      onClick={toggleVideo}
+                    >
+                      {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
+                    </button>
+                    <button
+                      className="control-btn end"
+                      onClick={endCall}
+                    >
+                      <FaPhoneSlash />
+                    </button>
+                  </div>
                 )}
               </div>
-
-              {incomingCall && (
-                <div className="call-status">
-                  <p>Incoming call from {incomingCall.from}</p>
-                  <button onClick={acceptCall} className="btn btn-primary">
-                    <FaPhone /> Accept Call
-                  </button>
-                </div>
-              )}
-
-              <div className="video-container">
-                <div className="video-wrapper">
-                  <video 
-                    ref={localVideoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
-                    className="video" 
-                  />
-                  {localPrediction.class && (
-                    <div className="prediction-overlay">
-                      <p>You: {localPrediction.class} ({(localPrediction.confidence * 100).toFixed(2)}%)</p>
-                    </div>
-                  )}
-                </div>
-                <div className="video-wrapper">
-                  <video 
-                    ref={remoteVideoRef} 
-                    autoPlay 
-                    playsInline 
-                    className="video" 
-                  />
-                 {remotePrediction.class && (
-             <div className="prediction-overlay">
-            <p>Peer: {remotePrediction.class} ({(remotePrediction.confidence * 100).toFixed(2)}%)</p>
-  </div>
-)}
-
-                </div>
-              </div>
-
-              {isInCall && (
-                <div className="controls">
-                  <button 
-                    className={`control-button toggle ${isAudioMuted ? 'active' : ''}`}
-                    onClick={toggleAudio}
-                  >
-                    {isAudioMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
-                  </button>
-                  
-                  <button 
-                    className={`control-button toggle ${isVideoOff ? 'active' : ''}`}
-                    onClick={toggleVideo}
-                  >
-                    {isVideoOff ? <FaVideoSlash /> : <FaVideo />}
-                  </button>
-                  
-                  <button 
-                    className="control-button end-call"
-                    onClick={endCall}
-                  >
-                    <FaPhoneSlash />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-
-<div className="message-section">
-        <h3>Live Transcription</h3>
-        <div className="message-box">
-          <p><strong>You:</strong> {localMessage}</p>
-          <p><strong>Partner:</strong> {remoteMessage}</p>
+            )}
+          </div>
         </div>
-        <button onClick={sendMessage}>Send</button>
-      </div>
-        </div>
-      </>
-    );
-  };
+      );}
+
 
   export default VideoCall;
