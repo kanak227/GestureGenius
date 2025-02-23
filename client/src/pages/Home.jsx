@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Camera, Video, BrainCircuit } from 'lucide-react';
-
+import './css/Home.css';
 const HomePage = () => {
   return (
     <div className="homepage">
-      {/* Navbar */}
+      
       <nav className="navbar">
         <div className="container">
           <ul>
@@ -97,65 +97,6 @@ const HomePage = () => {
           </Link>
         </div>
       </div>
-
-      {/* Styles */}
-      <style>{`
-        .problem-highlight, .solution {
-          background-color: #f8fafc;
-          padding: 60px 0;
-          text-align: center;
-        }
-
-        .problem-highlight h2, .solution h2 {
-          font-size: 32px;
-          color: #1e40af;
-          margin-bottom: 15px;
-        }
-
-        .problem-highlight p, .solution p {
-          font-size: 18px;
-          color: #4b5563;
-          max-width: 800px;
-          margin: 0 auto;
-        }
-
-        .solution-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 20px;
-          margin-top: 40px;
-        }
-
-        .solution-card {
-          background: white;
-          border-radius: 8px;
-          padding: 25px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          text-align: center;
-          transition: transform 0.3s;
-        }
-
-        .solution-card:hover {
-          transform: translateY(-5px);
-        }
-
-        .icon {
-          width: 48px;
-          height: 48px;
-          color: #2563eb;
-          margin-bottom: 15px;
-        }
-
-        .solution-card h3 {
-          font-size: 22px;
-          margin-bottom: 10px;
-        }
-
-        .solution-card p {
-          font-size: 16px;
-          color: #666;
-        }
-      `}</style>
     </div>
   );
 };

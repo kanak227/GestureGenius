@@ -187,7 +187,7 @@ try:
     )
 
     logger.info("Starting video capture...")
-    camera = cv2.VideoCapture(0)  # Open webcam
+    camera = cv2.VideoCapture(0, cv2.CAP_V4L2)  # Open webcam
 
 except Exception as e:
     logger.error(f"Error during initialization: {str(e)}")
@@ -226,7 +226,7 @@ def generate_frames():
                 padding = 20
                 x_min = max(0, min(x_coords) - padding)
                 x_max = min(w, max(x_coords) + padding)
-                y_min = max(0, min(y_coords) - padding)
+                y_min = max(0, min(y_coords) - padding) 
                 y_max = min(h, max(y_coords) + padding)
 
                 hand_region = frame[y_min:y_max, x_min:x_max]
