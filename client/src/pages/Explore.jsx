@@ -1,153 +1,200 @@
-import React from 'react';
-import { BrainCircuit, Image, Globe } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { BrainCircuit, Image, Globe, BarChart, Users, Zap } from "lucide-react"
+import { Link } from "react-router-dom"
 
-const ModelPage = () => {
+const ExplorePage = () => {
   return (
-    <>
-         <nav className="navbar">
+    <div className="explore-page">
+      <nav className="navbar">
         <div className="container">
+          
           <ul>
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/self-testing">Self Testing</Link></li>
-            <li><Link to="/video-calling">Video Calling</Link></li>
-            <li><Link to="/learn">Learn ASL</Link></li>
-            <li><Link to="/Explore">Explore Model</Link></li>
-
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/self-testing">Self Testing</Link>
+            </li>
+            <li>
+              <Link to="/video-calling">Video Calling</Link>
+            </li>
+            <li>
+              <Link to="/learn">Learn ASL</Link>
+            </li>
+            <li>
+              <Link to="/explore" className="active">
+                Explore Model
+              </Link>
+            </li>
           </ul>
         </div>
       </nav>
-    <div className="model-page">
-      {/* Model Overview */}
-      <div className="model-overview">
-        <div className="container">
-          <h1>Our AI Model</h1>
-          <p>
-            We have utilized a pre-trained <strong>MobileNet</strong> model and fine-tuned it over a dataset containing
-            more than <strong>30,000 images</strong> to accurately detect and recognize American Sign Language (ASL) gestures.
-          </p>
-        </div>
-      </div>
 
-      {/* Real-Life Applications */}
-      <div className="real-life-applications">
+      <header className="hero">
         <div className="container">
-          <h2>Real-Life Applications</h2>
-          <p>
-            Our model is designed to make ASL communication more accessible and efficient in various real-world scenarios.
-          </p>
-          <ul>
-            <li><strong>Education:</strong> Assists in ASL learning for students and teachers.</li>
-            <li><strong>Healthcare:</strong> Helps deaf patients communicate with medical staff.</li>
-            <li><strong>Customer Support:</strong> Enhances accessibility in businesses and public services.</li>
-            <li><strong>Social Interaction:</strong> Enables fluid communication between ASL and non-ASL users.</li>
-          </ul>
+          <h1>Explore Our <span>AI Model</span></h1>
+          <p>Discover the power of our advanced ASL detection technology</p>
         </div>
-      </div>
-      {/* Technical Details */}
-      <div className="technical-details">
+      </header>
+
+     
+
+      <section className="technical-details">
         <div className="container">
           <h2>Technical Highlights</h2>
           <div className="tech-grid">
             <div className="tech-card">
               <BrainCircuit className="icon" />
-              <h3>Pre-trained MobileNet</h3>
+              <h3>MobileNet Architecture</h3>
               <p>
-                We started with MobileNet, a lightweight and efficient deep learning model optimized for mobile and edge devices.
+                Built on the efficient MobileNet architecture, optimized for mobile and edge devices without
+                compromising on performance.
               </p>
             </div>
             <div className="tech-card">
               <Image className="icon" />
-              <h3>30,000+ ASL Images</h3>
+              <h3>Extensive Dataset</h3>
               <p>
-                The model was fine-tuned on a custom dataset of over 30,000 ASL gesture images, ensuring high accuracy and reliability.
+                Fine-tuned on a curated dataset of 30,000+ ASL gesture images, ensuring robust recognition across
+                diverse hand shapes and positions.
               </p>
             </div>
             <div className="tech-card">
               <Globe className="icon" />
-              <h3>Real-time Detection</h3>
+              <h3>Real-time Processing</h3>
               <p>
-                The model runs efficiently in real time, allowing users to get instant recognition feedback.
+                Achieves real-time detection and recognition, providing instant feedback for seamless communication
+                experiences.
+              </p>
+            </div>
+            <div className="tech-card">
+              <BarChart className="icon" />
+              <h3>99% Accuracy</h3>
+              <p>
+                Our model boasts an impressive 99% accuracy rate, ensuring reliable and precise ASL gesture recognition.
+              </p>
+            </div>
+            <div className="tech-card">
+              <Users className="icon" />
+              <h3>Multi-user Support</h3>
+              <p>
+                Capable of detecting and recognizing ASL gestures from multiple users simultaneously in various
+                environments.
+              </p>
+            </div>
+            <div className="tech-card">
+              <Zap className="icon" />
+              <h3>Low Latency</h3>
+              <p>
+                Optimized for minimal latency, ensuring smooth and responsive user interactions in real-time
+                applications.
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
+      <style jsx>{`
+        .explore-page {
+          font-family: 'Inter', sans-serif;
+          color: #333;
+          line-height: 1.6;
+        }
 
-      {/* Styles */}
-      <style>{`
-        .model-overview, .technical-details, .real-life-applications {
-          background-color: #f8fafc;
-          padding: 30px 0;
+        .navbar {
+          background-color: #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          padding: 1rem 0;
+        }
+
+        .navbar .container {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .logo {
+          font-size: 1.8rem;
+          font-weight: bold;
+          color: #1a365d;
+          text-decoration: none;
+        }
+
+        .logo span {
+          color: #2b6cb0;
+        }
+
+        .navbar ul {
+          display: flex;
+          gap: 1.5rem;
+          list-style: none;
+        }
+
+        .navbar ul li a {
+          color:rgb(61, 75, 97);
+          text-decoration: none;
+          font-weight: 600;
+          transition: color 0.3s ease;
+        }
+
+        .navbar a:hover, .navbar a.active {
+          color: #2b6cb0;
+          text-decoration: underline;
+        }
+
+        .hero {
+          background-color: #2b6cb0;
+          color: white;
+          padding: 4rem 0;
           text-align: center;
         }
 
-        .model-overview h1, .technical-details h2, .real-life-applications h2 {
-          font-size: 32px;
-          color: #1e40af;
-          margin-bottom: 15px;
+        .hero h1 {
+          font-size: 3rem;
+          margin-bottom: 1rem;
         }
 
-        .model-overview p, .technical-details p, .real-life-applications p {
-          font-size: 18px;
-          color: #4b5563;
-          max-width: 800px;
+        .hero h1 span {
+          color: #ffcc00;
+        }
+
+        .hero p {
+          font-size: 1.3rem;
+          max-width: 600px;
           margin: 0 auto;
+        }
+
+        section {
+          padding: 4rem 0;
+        }
+
+        h2 {
+          font-size: 2.2rem;
+          color: #2d3748;
+          margin-bottom: 1.5rem;
+          text-align: center;
         }
 
         .tech-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 20px;
-          margin-top: 40px;
+          gap: 2rem;
         }
 
         .tech-card {
           background: white;
-          border-radius: 8px;
-          padding: 25px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          text-align: center;
-          transition: transform 0.3s;
-          }
-          
-          .tech-card:hover {
-          transform: translateY(-5px);
-          }
-
-          .icon {
-            width: 48px;
-            height: 48px;
-          color: #2563eb;
-          margin-bottom: 15px;
-          }
-
-        .tech-card h3 {
-          font-size: 22px;
-          margin-bottom: 10px;
+          border-radius: 10px;
+          padding: 2rem;
+          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
-        .tech-card p {
-            font-size: 16px;
-          color: #666;
-        }
-        
-        .real-life-applications ul {
-          text-align: left;
-          max-width: 600px;
-          margin: 20px auto;
-          font-size: 18px;
-          color: #4b5563;
-          }
 
-        .real-life-applications li {
-            margin-bottom: 10px;
-            }
+        .tech-card:hover {
+          transform: translateY(-7px);
+          box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
       `}</style>
     </div>
-            </>
-  );
-};
+  )
+}
 
-export default ModelPage;
+export default ExplorePage
