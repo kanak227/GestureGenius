@@ -1,245 +1,210 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Camera, Video, PlayCircle } from 'lucide-react';
+// import React, { useRef, useEffect, useState } from 'react';
+// import './ASLDetector.css';
 
-const Testing = () => {
-  const [stream, setStream] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [message, setMessage] = useState('');
-  const [showAlert, setShowAlert] = useState(false);
+// const ASLDetector = () => {
+//   const videoRef = useRef(null);
+//   const canvasRef = useRef(null);
+//   const frameInterval = useRef(null);
+//   const [prediction, setPrediction] = useState(null);
+//   const [isStarted, setIsStarted] = useState(false);
+//   const [isProcessing, setIsProcessing] = useState(false);
+//   const [outputString, setOutputString] = useState('');
+//   const [handDetected, setHandDetected] = useState(false); // New state for tracking hand detection
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      setStream(mediaStream);
-      setIsRecording(true);
-      setShowAlert(true);
-      simulateGestureDetection();
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-    }
-  };
+//   const captureFrame = async () => {
+//     if (!videoRef.current || !canvasRef.current || isProcessing) return;
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-      setIsRecording(false);
-      setMessage('');
-      setShowAlert(false);
-    }
-  };
+//     setIsProcessing(true);
+//     const video = videoRef.current;
+//     const canvas = canvasRef.current;
+//     const context = canvas.getContext('2d');
 
-  const simulateGestureDetection = () => {
-    const helloMessage = 'Hello!';
-    let currentIndex = 0;
+//     canvas.width = video.videoWidth;
+//     canvas.height = video.videoHeight;
+//     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+//     try {
+//       const response = await fetch('http://localhost:5000/predict', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({
+//           image: canvas.toDataURL('image/jpeg')
+//         }),
+//       });
 
-    const interval = setInterval(() => {
-      if (currentIndex < helloMessage.length) {
-        setMessage(prev => prev + helloMessage[currentIndex]);
-        currentIndex++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 1000);
-  };
+//       const data = await response.json();
+
+//       if (!data.error) {
+//         setPrediction(data);
+        
+//         // Update output string
+//         if (data.class) {
+//           setOutputString(prev => {
+//             const newString = prev + data.class;
+//             return newString.length > 30 ? newString.slice(-30) : newString;
+//           });
+//         }
+        
+//         // Draw bounding box and update hand detection state
+//         if (data.bbox) {
+//           setHandDetected(true);  // Hand detected, enable blinking effect
+//           context.strokeStyle = '#00FF00';
+//           context.lineWidth = 2;
+//           context.strokeRect(
+//             data.bbox.x_min,
+//             data.bbox.y_min,
+//             data.bbox.x_max - data.bbox.x_min,
+//             data.bbox.y_max - data.bbox.y_min
+//           );
+//         } else {
+//           setHandDetected(false); // No hand detected, disable blinking effect
+//         }
+//       } else {
+//         setHandDetected(false); // If prediction failed, disable blinking
+//       }
+//     } catch (error) {
+//       console.error('Error predicting:', error);
+//       setHandDetected(false);
+//     } finally {
+//       setIsProcessing(false);
+//       await new Promise(resolve => setTimeout(resolve, 500));
+//     }
+//   };
+
+//   const startCamera = async () => {
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({
+//         video: {
+//           width: { ideal: 640 },
+//           height: { ideal: 480 }
+//         }
+//       });
+
+//       if (videoRef.current) {
+//         videoRef.current.srcObject = stream;
+//         await videoRef.current.play();
+//         setIsStarted(true);
+        
+//         frameInterval.current = setInterval(captureFrame, 500);
+//       }
+//     } catch (err) {
+//       console.error("Error accessing camera:", err);
+//     }
+//   };
+
+//   const stopCamera = () => {
+//     if (videoRef.current && videoRef.current.srcObject) {
+//       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+//     }
+//     if (frameInterval.current) {
+//       clearInterval(frameInterval.current);
+//     }
+//     setIsStarted(false);
+//     setPrediction(null);
+//     setOutputString('');
+//     setHandDetected(false); // Reset hand detection state
+//   };
+
+//   const clearOutput = () => {
+//     setOutputString('');
+//   };
+
+//   useEffect(() => {
+//     return () => {
+//       stopCamera();
+//     };
+//   }, []);
+
+//   return (
+//     <div className="asl-detector">
+//       <h2 className="title">ASL Sign Language Detector</h2>
+      
+//       <div className={video-container ${handDetected ? 'processing' : ''}}>
+//         <video ref={videoRef} playsInline />
+//         <canvas ref={canvasRef} />
+//         {handDetected && <div className="processing-overlay" />}
+//       </div>
+
+//       <div className="controls">
+//         <button 
+//           onClick={isStarted ? stopCamera : startCamera}
+//           className={control-button ${isStarted ? 'stop' : 'start'}}
+//         >
+//           {isStarted ? 'Stop Camera' : 'Start Camera'}
+//         </button>
+
+//         <button 
+//           onClick={clearOutput}
+//           className="control-button clear"
+//           disabled={!outputString}
+//         >
+//           Clear Output
+//         </button>
+//       </div>
+
+//       {outputString && (
+//         <div className="output-container">
+//           <h3>Detected Signs:</h3>
+//           <div className="output-text">{outputString}</div>
+//         </div>
+//       )}
+
+//       {prediction && prediction.hand_image && (
+//         <div className="prediction-container">
+//           <div className="hand-image">
+//             <h3>Detected Hand</h3>
+//             <img src={prediction.hand_image} alt="Detected hand" />
+//           </div>
+//           <div className="prediction-info">
+//             <h3>Prediction</h3>
+//             <p className="sign">Sign: {prediction.class}</p>
+//             <p className="confidence">
+//               Confidence: {(prediction.confidence * 100).toFixed(2)}%
+//             </p>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default ASLDetector;
+
+
+import React, { useEffect, useState } from 'react';
+import './css/SelfTesting.css';
+
+const ASLDetector = () => {
+  const [prediction, setPrediction] = useState('');
 
   useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('http://localhost:5000/prediction');
+        const data = await response.json();
+        setPrediction(data.class);
+      } catch (error) {
+        console.error("Error fetching prediction:", error);
       }
-    };
-  }, [stream]);
+    }, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="app-container">
-      <nav className="navbar">
-        <div className="nav-container">
-          <ul className="nav-list">
-            <li><Link to="/">Home</Link></li>
-            <li><Link to="/self-testing">Self Testing</Link></li>
-            <li><Link to="/video-calling">Video Calling</Link></li>
-            <li><Link to="/learn">Learn ASL</Link></li>
-                        <li><Link to="/Explore">Explore Model</Link></li>
+    <div className="asl-detector">
+      <h2 className="title">ASL Sign Language Detector</h2>
 
-          </ul>
-        </div>
-      </nav>
-
-      <div className="main-content">
-        <div className="camera-container">
-          <div className="video-wrapper">
-            {stream ? (
-              <video
-                autoPlay
-                playsInline
-                ref={video => {
-                  if (video) {
-                    video.srcObject = stream;
-                  }
-                }}
-                className="video-feed"
-              />
-            ) : (
-              <div className="camera-placeholder">
-                <Camera size={64} />
-              </div>
-            )}
-          </div>
-
-          <div className="controls">
-            {!isRecording ? (
-              <button
-                onClick={startCamera}
-                className="start-button"
-              >
-                <PlayCircle size={20} />
-                <span>Start Camera</span>
-              </button>
-            ) : (
-              <button
-                onClick={stopCamera}
-                className="stop-button"
-              >
-                <Video size={20} />
-                <span>Stop Camera</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {showAlert && (
-          <div className="custom-alert">
-            <p className="alert-content">
-              Detected Signs: <span className="detected-text">{message}</span>
-            </p>
-          </div>
-        )}
+      <div className="video-container">
+        <img src="http://localhost:5000/video_feed" alt="Live ASL Stream" />
       </div>
 
-      <style jsx>{`
-        .app-container {
-          min-height: 100vh;
-          background-color: #f5f5f5;
-        }
-
-        .nav-container {
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .nav-list {
-          display: flex;
-          gap: 2rem;
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .nav-list a {
-          color: #333;
-          text-decoration: none;
-          transition: color 0.3s;
-        }
-
-        .nav-list a:hover {
-          color: #666;
-        }
-
-        .main-content {
-          max-width: 800px;
-          margin: 2rem auto;
-          padding: 0 1rem;
-        }
-
-        .camera-container {
-          background-color: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .video-wrapper {
-          aspect-ratio: 16 / 9;
-          background-color: #1a1a1a;
-          border-radius: 8px;
-          overflow: hidden;
-          margin-bottom: 1rem;
-        }
-
-        .video-feed {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .camera-placeholder {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #666;
-        }
-
-        .controls {
-          display: flex;
-          justify-content: center;
-          gap: 1rem;
-        }
-
-        .start-button, .stop-button {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 1rem;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 1rem;
-          transition: background-color 0.3s;
-        }
-
-        .start-button {
-          background-color: #4CAF50;
-          color: white;
-        }
-
-        .start-button:hover {
-          background-color: #45a049;
-        }
-
-        .stop-button {
-          background-color: #f44336;
-          color: white;
-        }
-
-        .stop-button:hover {
-          background-color: #da190b;
-        }
-
-        .custom-alert {
-          background-color: #e3f2fd;
-          border: 1px solid #90caf9;
-          border-radius: 4px;
-          padding: 1rem;
-          margin-top: 1rem;
-        }
-
-        .alert-content {
-          margin: 0;
-          font-size: 1rem;
-          color: #1976d2;
-        }
-
-        .detected-text {
-          font-weight: bold;
-        }
-      `}</style>
+      <div className="output-container">
+        <h3>Detected Sign:</h3>
+        <div className="output-text">{prediction || "No hand detected"}</div>
+      </div>
     </div>
   );
 };
 
-export default Testing; 
+export default ASLDetector;
