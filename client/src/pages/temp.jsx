@@ -1,94 +1,145 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 const VideoChat = () => {
   const [localStream, setLocalStream] = useState(null);
   const [peerId, setPeerId] = useState('');
   const [localPeerId] = useState(`user-${Math.random().toString(36).substr(2, 9)}`);
   const [prediction, setPrediction] = useState({ class: '', confidence: 0 });
+  const [isProcessingFrame, setIsProcessingFrame] = useState(false);
   
   const localVideoRef = useRef();
   const remoteVideoRef = useRef();
   const canvasRef = useRef();
   const peerConnectionRef = useRef();
   const wsRef = useRef();
-  const frameIntervalRef = useRef();
+  const frameCountRef = useRef(0);
+  const animationFrameRef = useRef();
+
+  // Constants for optimization
+  const FRAME_SKIP = 2; // Process every 3rd frame
+  const VIDEO_CONSTRAINTS = {
+    width: { ideal: 640 },
+    height: { ideal: 480 },
+    frameRate: { ideal: 15 }
+  };
 
   // Initialize WebSocket connection
   useEffect(() => {
-    wsRef.current = new WebSocket(`ws://localhost:8000/ws/${localPeerId}`);
+    wsRef.current = new WebSocket(`ws://192.168.155.252:8000/ws/${localPeerId}`);
     
     wsRef.current.onmessage = async (event) => {
       const message = JSON.parse(event.data);
       
-      if (message.type === 'offer') {
-        await handleOffer(message);
-      } else if (message.type === 'answer') {
-        await handleAnswer(message);
-      } else if (message.type === 'ice-candidate') {
-        await handleIceCandidate(message);
-      } else if (message.type === 'processed-frame') {
-        // Display processed frame from other peer
-        const img = new Image();
-        img.onload = () => {
-          const canvas = remoteVideoRef.current;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
-        img.src = message.frame;
-        setPrediction(message.prediction);
+      switch (message.type) {
+        case 'offer':
+          await handleOffer(message);
+          break;
+        case 'answer':
+          await handleAnswer(message);
+          break;
+        case 'ice-candidate':
+          await handleIceCandidate(message);
+          break;
+        case 'processed-frame':
+          if (remoteVideoRef.current) {
+            const img = new Image();
+            img.onload = () => {
+              const ctx = remoteVideoRef.current.getContext('2d');
+              ctx.drawImage(img, 0, 0, remoteVideoRef.current.width, remoteVideoRef.current.height);
+            };
+            img.src = message.frame;
+            setPrediction(message.prediction);
+          }
+          break;
       }
     };
 
     return () => {
       if (wsRef.current) wsRef.current.close();
-      if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
-  // Initialize local stream and frame processing
+  // Optimized frame capture function
+  const captureAndSendFrame = useCallback(() => {
+    if (!peerId || !wsRef.current || isProcessingFrame) return;
+
+    frameCountRef.current++;
+    if (frameCountRef.current % (FRAME_SKIP + 1) !== 0) {
+      animationFrameRef.current = requestAnimationFrame(captureAndSendFrame);
+      return;
+    }
+
+    const video = localVideoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      setIsProcessingFrame(true);
+      
+      // Compress frame before sending
+      canvas.toBlob(
+        (blob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({
+                type: 'video-frame',
+                frame: reader.result,
+                target: peerId
+              }));
+            }
+            setIsProcessingFrame(false);
+          };
+          reader.readAsDataURL(blob);
+        },
+        'image/jpeg',
+        0.7 // Reduced quality for better performance
+      );
+    }
+
+    animationFrameRef.current = requestAnimationFrame(captureAndSendFrame);
+  }, [peerId, isProcessingFrame]);
+
+  // Initialize local stream with optimized settings
   useEffect(() => {
     const initLocalStream = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: VIDEO_CONSTRAINTS,
           audio: true
         });
+        
         setLocalStream(stream);
         
-        // Setup canvas for frame capture
-        const video = localVideoRef.current;
-        const canvas = canvasRef.current;
-        video.srcObject = stream;
-        
-        // Start frame capture and processing
-        frameIntervalRef.current = setInterval(() => {
-          if (peerId && wsRef.current) {
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const frame = canvas.toDataURL('image/jpeg');
-            
-            // Send frame for processing
-            wsRef.current.send(JSON.stringify({
-              type: 'video-frame',
-              frame: frame,
-              target: peerId
-            }));
-          }
-        }, 100); // Adjust interval as needed
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        // Start frame capture using requestAnimationFrame
+        if (peerId) {
+          animationFrameRef.current = requestAnimationFrame(captureAndSendFrame);
+        }
       } catch (error) {
         console.error('Error accessing media devices:', error);
       }
     };
 
     initLocalStream();
+
     return () => {
       if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
       }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [peerId]);
+  }, [peerId, captureAndSendFrame]);
 
-  const createPeerConnection = () => {
+  const createPeerConnection = useCallback(() => {
     const configuration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' }
@@ -98,14 +149,13 @@ const VideoChat = () => {
     const pc = new RTCPeerConnection(configuration);
 
     pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        const message = {
+      if (event.candidate && wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
           type: 'ice-candidate',
           candidate: event.candidate,
           target: peerId,
           from: localPeerId
-        };
-        wsRef.current.send(JSON.stringify(message));
+        }));
       }
     };
 
@@ -116,7 +166,7 @@ const VideoChat = () => {
     }
 
     return pc;
-  };
+  }, [localStream, peerId, localPeerId]);
 
   const handleOffer = async (message) => {
     peerConnectionRef.current = createPeerConnection();
@@ -125,22 +175,29 @@ const VideoChat = () => {
     const answer = await peerConnectionRef.current.createAnswer();
     await peerConnectionRef.current.setLocalDescription(answer);
 
-    const answerMessage = {
-      type: 'answer',
-      answer: answer,
-      target: message.from,
-      from: localPeerId
-    };
-    wsRef.current.send(JSON.stringify(answerMessage));
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'answer',
+        answer: answer,
+        target: message.from,
+        from: localPeerId
+      }));
+    }
   };
 
   const handleAnswer = async (message) => {
-    await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(message.answer));
+    if (peerConnectionRef.current) {
+      await peerConnectionRef.current.setRemoteDescription(
+        new RTCSessionDescription(message.answer)
+      );
+    }
   };
 
   const handleIceCandidate = async (message) => {
     if (peerConnectionRef.current) {
-      await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(message.candidate));
+      await peerConnectionRef.current.addIceCandidate(
+        new RTCIceCandidate(message.candidate)
+      );
     }
   };
 
@@ -150,13 +207,14 @@ const VideoChat = () => {
     const offer = await peerConnectionRef.current.createOffer();
     await peerConnectionRef.current.setLocalDescription(offer);
 
-    const message = {
-      type: 'offer',
-      offer: offer,
-      target: peerId,
-      from: localPeerId
-    };
-    wsRef.current.send(JSON.stringify(message));
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'offer',
+        offer: offer,
+        target: peerId,
+        from: localPeerId
+      }));
+    }
   };
 
   return (
@@ -190,7 +248,12 @@ const VideoChat = () => {
             muted
             style={styles.video}
           />
-          <canvas ref={canvasRef} style={styles.hiddenCanvas} width="640" height="480" />
+          <canvas 
+            ref={canvasRef} 
+            style={styles.hiddenCanvas} 
+            width="640" 
+            height="480" 
+          />
         </div>
         <div style={styles.videoContainer}>
           <p style={styles.videoLabel}>Remote Video</p>
