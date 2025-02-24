@@ -14,6 +14,10 @@ HandTalk is a real-time American Sign Language (ASL) detection system integrated
 - **Machine Learning:** [Python](w), [OpenCV](w) for model prediction
 - **Signaling Protocol:** WebSockets
 - **Model Training:** Custom model trained using MobileNet architecture
+  
+## Project Architecture
+![image](https://github.com/user-attachments/assets/cc1d2090-12d7-41e6-825f-89f4e87c90d4)
+
 
 ## API Endpoints
 We have implemented several APIs in our Python backend:
