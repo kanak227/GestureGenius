@@ -30,6 +30,7 @@ HandTalk/
 │   ├── best_model.keras  # Trained model for ASL prediction
 │   ├── index.js         # Node.js backend for WebRTC communication
 │   ├── server.py        # Python backend for video processing & prediction
+|   ├── ser.py   #python backend for self testing 
 │── ModelTrain.ipynb     # Model training script
 ```
 
@@ -64,6 +65,7 @@ pip install flask opencv-python numpy tensorflow mediapipe flask-cors
 Then, start the Python backend:
 ```bash
 python server.py
+python ser.py
 ```
 
 Now, access the project at **http://localhost:3000**.
