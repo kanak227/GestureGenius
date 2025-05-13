@@ -118,11 +118,14 @@ const ASLDetector = () => {
               <>
                 <div className="video-container">
                   <div className="video-wrapper">
-                    <img 
-                      src={`${serverUrl}/video_feed`} 
-                      alt="Live ASL Stream" 
-                      className="video-feed" 
-                    />
+                    {/* Using iframe instead of img to prevent refreshing */}
+                    <iframe
+                      src={`${serverUrl}/video_feed`}
+                      title="Live ASL Stream"
+                      className="video-feed"
+                      frameBorder="0"
+                      allowFullScreen
+                    ></iframe>
                     <div className="video-overlay">
                       <Camera className="camera-icon" />
                     </div>

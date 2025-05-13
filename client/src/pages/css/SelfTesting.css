@@ -147,6 +147,8 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  border: none;
+  overflow: hidden;
 }
 
 .video-overlay {

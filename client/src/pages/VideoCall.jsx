@@ -254,37 +254,68 @@ const startASLDetection = () => {
   };
   const startLocalStream = async () => {
     try {
-      console.log('Requesting media stream');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true
-      });
-      console.log('Media stream obtained:', stream);
-      setLocalStream(stream);
+      console.log('Requesting camera and microphone permissions...');
       
-      if (localVideoRef.current) {
-        console.log('Setting video source');
-        localVideoRef.current.srcObject = stream;
+      // First try to get both video and audio
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user"
+          },
+          audio: true
+        });
         
-        localVideoRef.current.onplay = () => {
-          console.log('Local video started playing');
-        };
+        console.log('Media stream obtained:', stream);
+        setLocalStream(stream);
         
-        localVideoRef.current.onloadedmetadata = () => {
-          console.log('Video metadata loaded');
-          console.log('Video dimensions:', {
-            width: localVideoRef.current.videoWidth,
-            height: localVideoRef.current.videoHeight
-          });
-        };
-      } else {
-        console.error('Local video ref not available');
+        if (localVideoRef.current) {
+          console.log('Setting video source');
+          localVideoRef.current.srcObject = stream;
+          
+          localVideoRef.current.onplay = () => {
+            console.log('Local video started playing');
+          };
+          
+          localVideoRef.current.onloadedmetadata = () => {
+            console.log('Video metadata loaded');
+            console.log('Video dimensions:', {
+              width: localVideoRef.current.videoWidth,
+              height: localVideoRef.current.videoHeight
+            });
+          };
+        } else {
+          console.error('Local video ref not available');
+        }
+        
+        return stream;
+      } catch (err) {
+        console.warn('Could not get both camera and microphone, trying video only:', err);
+        
+        // If that fails, try just video
+        const videoOnlyStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user"
+          },
+          audio: false
+        });
+        
+        console.log('Video-only stream obtained:', videoOnlyStream);
+        setLocalStream(videoOnlyStream);
+        
+        if (localVideoRef.current) {
+          console.log('Setting video source (video only)');
+          localVideoRef.current.srcObject = videoOnlyStream;
+        }
+        
+        return videoOnlyStream;
       }
-      
-      return stream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      alert('Cannot access camera or microphone');
+      alert('Cannot access camera. Please ensure you have granted camera permissions in your browser settings and try again.');
       throw error;
     }
   };
