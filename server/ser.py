@@ -6,6 +6,7 @@ import mediapipe as mp
 from flask_cors import CORS
 import logging
 import traceback
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -49,50 +50,78 @@ def preprocess_image(image_array):
 def generate_frames():
     """Generate video frames with hand detection and ASL prediction."""
     global latest_prediction
-
+    
+    # Set a lower frame rate to reduce refreshing
+    frame_count = 0
+    frame_skip = 2  # Process every 3rd frame
+    
+    # Store the last processed frame to reuse when skipping frames
+    last_processed_frame = None
+    
     while True:
         success, frame = camera.read()
         if not success:
-            break
+            # If camera read fails, use the last frame if available or wait
+            if last_processed_frame is not None:
+                frame = last_processed_frame
+            else:
+                # Wait a bit and try again
+                time.sleep(0.1)
+                continue
+        
+        # Process only every few frames to reduce flickering
+        process_this_frame = frame_count % frame_skip == 0
+        frame_count += 1
+        
+        if process_this_frame:
+            # Store a copy of the original frame
+            display_frame = frame.copy()
+            
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = hands.process(rgb_frame)
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = hands.process(rgb_frame)
+            detected_class = ""
+            detected_confidence = 0.0
 
-        detected_class = ""
-        detected_confidence = 0.0
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    h, w, _ = frame.shape
+                    x_coords = [int(landmark.x * w) for landmark in hand_landmarks.landmark]
+                    y_coords = [int(landmark.y * h) for landmark in hand_landmarks.landmark]
 
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                h, w, _ = frame.shape
-                x_coords = [int(landmark.x * w) for landmark in hand_landmarks.landmark]
-                y_coords = [int(landmark.y * h) for landmark in hand_landmarks.landmark]
+                    padding = 20
+                    x_min = max(0, min(x_coords) - padding)
+                    x_max = min(w, max(x_coords) + padding)
+                    y_min = max(0, min(y_coords) - padding)
+                    y_max = min(h, max(y_coords) + padding)
 
-                padding = 20
-                x_min = max(0, min(x_coords) - padding)
-                x_max = min(w, max(x_coords) + padding)
-                y_min = max(0, min(y_coords) - padding)
-                y_max = min(h, max(y_coords) + padding)
+                    hand_region = frame[y_min:y_max, x_min:x_max]
 
-                hand_region = frame[y_min:y_max, x_min:x_max]
+                    if hand_region.size > 0:
+                        input_data = preprocess_image(hand_region)
+                        prediction = model.predict(input_data, verbose=0)
+                        index = np.argmax(prediction)
 
-                if hand_region.size > 0:
-                    input_data = preprocess_image(hand_region)
-                    prediction = model.predict(input_data, verbose=0)
-                    index = np.argmax(prediction)
+                        detected_class = class_names[index]
+                        detected_confidence = float(prediction[0][index])
 
-                    detected_class = class_names[index]
-                    detected_confidence = float(prediction[0][index])
+                        # Draw bounding box and label
+                        cv2.rectangle(display_frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+                        cv2.putText(display_frame, f"{detected_class} ({detected_confidence*100:.2f}%)",
+                                    (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
-                    # Draw bounding box and label
-                    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
-                    cv2.putText(frame, f"{detected_class} ({detected_confidence*100:.2f}%)",
-                                (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
-        # Update latest prediction
-        latest_prediction = {"class": detected_class, "confidence": detected_confidence}
-
+            # Update latest prediction only if we have a good confidence
+            if detected_confidence > 0.5:
+                latest_prediction = {"class": detected_class, "confidence": detected_confidence}
+            
+            # Save the processed frame for reuse
+            last_processed_frame = display_frame
+        else:
+            # Reuse the last processed frame to reduce flickering
+            display_frame = last_processed_frame if last_processed_frame is not None else frame
+        
         # Encode frame for streaming
-        _, buffer = cv2.imencode('.jpg', frame)
+        _, buffer = cv2.imencode('.jpg', display_frame)
         frame_bytes = buffer.tobytes()
 
         yield (b'--frame\r\n'
